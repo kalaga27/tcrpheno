@@ -6,7 +6,7 @@
 
 ## Installation
 
-You can install development version of tcrpheno from Github with:
+You can install tcrpheno from Github with:
 
 ``` r
 remotes::install_github("kalaga27/tcrpheno")
