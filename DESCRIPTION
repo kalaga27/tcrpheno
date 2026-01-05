@@ -1,13 +1,13 @@
 Package: tcrpheno
-Title: What the Package Does (One Line, Title Case)
+Title: Assigns T cell Phenotype Propensity Scores to TCR sequences 
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Kaitlyn",
+           family = "Lagattuta",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           email = "kalaga12@gmail.com",
+           comment = c(ORCID = "0000-0002-2950-6238"))
+Description: This R package is built around one central function, score_tcrs(), which receives T cell receptor data as input and returns a set of numeric scores for each input T cell receptor. Each score indicates a propensity for a particular T cell phenotype, such as innate-like MAIT or NKT cells. See PMID: 39731734 for development and interpretation of TCR scores.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
