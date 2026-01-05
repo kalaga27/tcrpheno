@@ -2,15 +2,48 @@
 % Please edit documentation in R/score_tcrs.R
 \name{score_tcrs}
 \alias{score_tcrs}
-\title{score TCR sequences}
+\title{Score TCR Sequences based on Pre-trained Models}
 \usage{
-score_tcrs(data, chain)
+score_tcrs(data, chain, MAIT_NKT = FALSE)
 }
 \arguments{
-\item{data}{TCR sequence data}
+\item{data}{A data frame containing TCR sequence information. It must contain
+columns corresponding to the chain(s) being scored. For alpha-beta pairs
+(\code{chain = "ab"}), it requires: \code{TCRA_vgene}, \code{TCRA_jgene}, \code{TCRA_cdr3aa},
+\code{TCRB_vgene}, \code{TCRB_jgene}, and \code{TCRB_cdr3aa}. For single chains, it
+requires the respective \code{TCRA} or \code{TCRB} columns.}
 
-\item{chain}{whether the TCR data is paired a-b ("ab"), alpha only ("a") or beta only ("b")}
+\item{chain}{A character string specifying the TCR chain type.
+Accepted values are:
+\itemize{
+\item \code{"ab"} for paired alpha-beta chains.
+\item \code{"a"} for alpha chain only.
+\item \code{"b"} for beta chain only.
+}}
+
+\item{MAIT_NKT}{A logical value (\code{TRUE} or \code{FALSE}). If \code{TRUE} and \code{chain = "b"},
+the function will apply models to score for MAIT-like and NKT-like phenotypes.
+Defaults to \code{FALSE}.}
+}
+\value{
+A data frame containing the calculated scores for each TCR. The row names
+will correspond to the input TCR identifiers, and column names will indicate the
+score type (e.g., "TCR-innate", "TCR-CD8").
 }
 \description{
-score TCR sequences
+This function takes a data frame of TCR sequences and calculates scores
+associated with different T cell phenotypes (e.g., Innate-like, CD8,
+Regulatory, Memory). It first featurizes the TCRs and then applies a
+weighted scoring model.
+}
+\examples{
+# Score paired alpha-beta TCRs
+ab_scores <- score_tcrs(tcrpheno_clones[1:200,], 
+                        chain = "ab")
+
+# Score beta-chain only for MAIT/NKT phenotypes
+nkt_scores <- score_tcrs(tcrpheno_clones[1:200,], 
+                         chain = "b", 
+                         MAIT_NKT = TRUE)
+
 }

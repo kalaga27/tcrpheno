@@ -1,23 +1,30 @@
 Package: tcrpheno
-Title: Assigns T cell Phenotype Propensity Scores to TCR sequences 
-Version: 0.0.0.9000
+Title: TCR-sequence-based phenotype scores
+Version: 0.99.0
 Authors@R: 
-    person(given = "Kaitlyn",
-           family = "Lagattuta",
-           role = c("aut", "cre"),
-           email = "kalaga12@gmail.com",
-           comment = c(ORCID = "0000-0002-2950-6238"))
-Description: This R package is built around one central function, score_tcrs(), which receives T cell receptor data as input and returns a set of numeric scores for each input T cell receptor. Each score indicates a propensity for a particular T cell phenotype, such as innate-like MAIT or NKT cells. See PMID: 39731734 for development and interpretation of TCR scores.
+    c(person(given = "Kaitlyn", family = "Lagattuta", role = c("aut", "cre"), email = "Kaitlyn_Lagattuta@hms.harvard.edu"), 
+    person(given = "Nick", family = "Borcherding", role = c("ctb"), email = "ncborch@gmail.com"))
+Description: The tcrpheno R package provides tools to predict T cell phenotypic fates based on their T cell receptor (TCR) sequences. Utilizing a logistic regression model trained on extensive paired TCR and transcriptome single-cell data, the primary function score_tcrs() analyzes input TCR alpha and/or beta chain information (CDR1/2/3 amino acid sequences, V/J gene usage) for individual cells. It calculates four scores, TCRinnate, TCR.8, TCRmem, and TCRreg, which quantify the predisposition of T cells towards innate-like, CD8+, memory, or regulatory phenotypes, respectively, by leveraging 1,250 biophysical features of the TCR sequence.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.2
 URL: https://github.com/kalaga27/tcrpheno
 BugReports: https://github.com/kalaga27/tcrpheno/issues
 Depends: 
-    R (>= 2.10)
+    R (>= 4.0)
 Imports: 
     dplyr,
     hash,
     stringr
+Suggests:
+    BiocStyle,
+    ggplot2,
+    knitr,
+    patchwork,
+    rmarkdown,
+    tibble,
+    tidyr
+VignetteBuilder: knitr
+Language: en-US

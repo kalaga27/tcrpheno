@@ -1,0 +1,175 @@
+---
+title: "Predicting T Cell Phenotype with tcrpheno"
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  BiocStyle::html_document:
+    toc_float: true
+package: tcrpheno
+vignette: >
+  %\VignetteIndexEntry{Applying tcrpheno and Visualizing Scores}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
+library(BiocStyle)
+```
+
+# Overview
+
+`tcrpheno` is an R package that applies a logistic regression model to the amino acid sequences of T-cell receptor (TCR) complementarity-determining regions (CDRs) 1, 2, and 3. This model produces phenotype scores associated with specific T cell fates, providing insights into the potential functional trajectory of T cells based on their TCR sequences.
+
+## More information on individual phenotypes:
+
+The `tcrpheno` package calculates four distinct scores, each linked to a potential T cell phenotype:
+
+* **TCRinnate**: Higher scores suggest a greater likelihood of the T cell adopting an innate-like, *PLZF*-high phenotype, characteristic of mucosal-associated invariant T (MAIT) cells or invariant natural killer T (iNKT). This score is strongly influenced by features in CDR2α and specific TRAV gene usage.
+* **TCR.CD8**: Higher scores indicate a predisposition towards a CD8+ T cell fate over a CD4+ fate. TCRs with high TCR.CD8 scores tend to have a depletion of positive charge in the mid-region of their CDR3 loops.
+* **TCRreg**: Higher scores point to an increased probability of the T cell becoming a regulatory T cell (Treg), encompassing both CD4+ and CD8+ Treg populations. This is associated with increased hydrophobicity in CDR3β and CDR3α residues.
+* **TCRmem**: Higher scores suggest a T cell is more likely to differentiate into a memory cell rather than remaining naive. This score reflects a general propensity for T-cell activation and is influenced by features in both CDR3α and CDR3β. Notably, higher TCRmem scores correlate with increased T-cell activation even among T cells recognizing the same antigen and correspond to the strength of positive selection in the thymus.
+
+## Citation
+
+If using `tcrpheno`, please cite the [article](https://pubmed.ncbi.nlm.nih.gov/39731734/): Lagattuta, K. et al. The T cell receptor sequence influences the likelihood of T cell memory formation. Cell Reports. 2025 Jan 28;44(1)
+
+# Installation
+
+```{r, eval = FALSE}
+# Ensure 'remotes' is installed: install.packages("remotes")
+remotes::install_github("kalaga27/tcrpheno")
+```
+
+# Loading Data
+
+This vignette uses the built-in `tcrpheno_clones` dataset, which is included with the `tcrpheno` package. This dataset is a data frame containing paired TCR-α and TCR-β sequences, already formatted for use with the `score_tcrs()` function.
+
+First, let's load the necessary libraries and the data.
+
+```{r load_data}
+# Load the tcrpheno package and other libraries for visualization
+library(tcrpheno)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(patchwork)
+
+# Load the built-in example data
+data("tcrpheno_clones", package = "tcrpheno")
+
+# Inspect the data format
+head(tcrpheno_clones)
+```
+
+The data frame has one row per unique T cell, with columns for the alpha and beta chains' CDR3 sequences and V/J gene usage.
+
+# Generating Phenotype Scores
+
+With the TCR data loaded, we can use the `score_tcrs()` function to calculate the four phenotype scores. We specify `"ab"` for the `chain` argument because our data contains paired TCR-α and TCR-β information.
+
+```{r score_clones}
+# Generate the phenotype scores
+tcrpheno_scores <- score_tcrs(tcrpheno_clones, chain = "ab")
+
+# Display the head of the results table
+head(tcrpheno_scores)
+```
+
+# Visualizing Phenotype Scores
+
+Instead of integrating these scores into a single-cell object, we can directly visualize them from the results data frame using `ggplot2`. This allows for a quick and powerful way to explore the characteristics of the TCR repertoire.
+
+### 1. Score Distributions
+
+A good first step is to examine the distribution of each phenotype score across all the TCRs in the dataset. We can use histograms to see the range and frequency of the predicted scores.
+
+```{r plot_distributions}
+# Reshape data for easy plotting with ggplot2
+scores_long <- tcrpheno_scores %>%
+  select(TCR.mem, TCR.reg, TCR.CD8, TCR.innate) %>%
+  pivot_longer(cols = everything(), names_to = "ScoreType", values_to = "Value")
+
+# Plot histograms for each score
+ggplot(scores_long, aes(x = Value)) +
+  geom_histogram(bins = 30, fill = "#4E79A7", color = "white") +
+  facet_wrap(~ScoreType, scales = "free") +
+  labs(
+    title = "Distribution of tcrpheno Phenotype Scores",
+    x = "Score Value",
+    y = "Number of TCRs"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+These plots provide a global overview of the predicted phenotypic landscape of the T cell repertoire. For example, we can see if the population is skewed towards a particular fate.
+
+### 2. Correlation Between Scores
+
+Next, we can investigate the relationships between different phenotype scores. Are certain predictions correlated? For instance, is there a subset of high `TCR.CD8` that also have high memory potential (`TCR.mem`)? Scatter plots are ideal for exploring these correlations.
+
+```{r plot_correlations}
+# Scatter plot for TCR.CD8 vs TCR.mem
+p1 <- ggplot(tcrpheno_scores, aes(x = TCR.CD8, y = TCR.mem)) +
+  geom_point(alpha = 0.4, color = "#F28E2B") +
+  geom_smooth(method = "lm", se = FALSE, color = "#4E79A7", linetype = "dashed") +
+  theme_minimal(base_size = 14) +
+  labs(title = "CD8 vs Memory Potential")
+
+# Scatter plot for TCR.CD8 vs TCR.innate
+p2 <- ggplot(tcrpheno_scores, aes(x = TCR.CD8, y = TCR.innate)) +
+  geom_point(alpha = 0.4, color = "#59A14F") +
+  geom_smooth(method = "lm", se = FALSE, color = "#4E79A7", linetype = "dashed") +
+  theme_minimal(base_size = 14) +
+  labs(title = "CD8 vs. Innate-like Potential")
+
+# Combine plots using the patchwork package
+p1 + p2
+```
+
+These plots help uncover potential co-regulation or trade-offs between different T cell fates as predicted by their TCR sequence.
+
+### 3. Relating Scores to TCR Gene Usage
+
+The `tcrpheno` model leverages V-gene usage, among other features. We can visualize this relationship directly. For example, the `TCR.innate` score is heavily influenced by `TCRA_vgene` usage. Let's create a boxplot to see which V genes are associated with higher innate-like scores.
+
+To make the plot readable, we'll first identify the 10 most frequent V genes in the dataset and then plot the `TCR.innate` score distribution for each.
+
+```{r plot_vgene}
+tcrpheno_overall <- tcrpheno_scores %>%
+                      merge(tcrpheno_clones, by = 0) %>%
+                      column_to_rownames("Row.names")
+
+# Find the 10 most abundant TRAV genes
+top_trav_genes <- tcrpheno_overall %>%
+  count(TCRA_vgene, sort = TRUE) %>%
+  filter(!is.na(TCRA_vgene)) %>%
+  slice_head(n = 10) %>%
+  pull(TCRA_vgene)
+
+# Filter the data for these genes and create the boxplot
+tcrpheno_overall %>%
+  filter(TCRA_vgene %in% top_trav_genes) %>%
+  ggplot(aes(x = reorder(TCRA_vgene, TCR.innate, median), y = TCR.innate)) +
+  geom_boxplot(fill = "#E15759", alpha = 0.8) +
+  labs(
+    title = "TCR.innate Score by TRAV Gene Usage",
+    subtitle = "Showing the 10 most frequent TRAV genes",
+    x = "TRAV Gene",
+    y = "TCR.innate Score"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This visualization confirms the expected behavior described in the overview—that specific V genes (`TRAV1-2` for MAIT cells) are associated with higher `TCR.innate` scores, highlighting the biological features captured by the model.
+
+# Conclusion  
+
+This has been a general overview of the capabilities of tcrpheno. If you have any questions, comments, or issues, please visit the [GitHub repository](https://github.com/kalaga27/tcrpheno).
+
+### Session Info
+
+```{r}
+sessionInfo()
+```

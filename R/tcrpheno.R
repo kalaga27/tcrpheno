@@ -1,3 +1,4 @@
+# Scale numeric variables
 scale_variables <- function(data, mns, sds){
   data = data[,as.character(names(mns))]
   data = sweep(data, 2, mns)
@@ -6,6 +7,7 @@ scale_variables <- function(data, mns, sds){
   return(data)
 }
 
+# Get Amino Acid at a specific position
 get_AA <- function(seqs, i, cdr3_align, max_length){
   seqs = as.character(seqs)
   nc = sapply(seqs, function(x) nchar(x))
@@ -14,6 +16,7 @@ get_AA <- function(seqs, i, cdr3_align, max_length){
   return(new)
 }
 
+# Add adjacent interaction features
 add_adjacent_ints <- function(x, prefix){
   factors = paste("AF", seq(1, 5), sep="")
   factor_grid = expand.grid(factors, factors)
@@ -32,6 +35,7 @@ add_adjacent_ints <- function(x, prefix){
   return(x)
 }
 
+# Reformat V/J gene names
 reformat_gene <- function(string, gene, brds){
   if (grepl("\\/", string)){
     string = gsub("\\/", "", string)
@@ -61,6 +65,8 @@ reformat_gene <- function(string, gene, brds){
   }
 }
 
+# Create a hash map
+#' @importFrom hash hash
 create_hashmap <- function(key_vector, val_vector){
   h = hash::hash()
   for (i in 1:length(key_vector)){
@@ -69,6 +75,7 @@ create_hashmap <- function(key_vector, val_vector){
   return(h)
 }
 
+# Calculate string index for alignment
 str_index <- function(str_length, pos, scheme, max_length){
   if (scheme=="LR" & pos<=ceiling(str_length/2)){
     return(pos)
@@ -95,6 +102,7 @@ str_index <- function(str_length, pos, scheme, max_length){
   }
 }
 
+# Calculate average feature score
 get_feat_score <- function(x, amap){
   if (is.na(x)) { return(NA) }
   if (x=="."){
@@ -107,11 +115,18 @@ get_feat_score <- function(x, amap){
   return(sum/nchar(x))
 }
 
-featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_ints52 = TRUE, return_seq_grid=FALSE, do_jgenes = TRUE, restrict_length=TRUE){
-
-  library(dplyr)
-  library(stringr)
-  library(hash)
+# Featurize TCR sequences
+#' @importFrom stringr str_count
+#' @importFrom dplyr left_join
+#' @importFrom hash hash
+featurize_tcrs <- function(data, 
+                           chain, 
+                           cdr3_align="mid", 
+                           cdr_only = TRUE, 
+                           add_ints52 = TRUE, 
+                           return_seq_grid=FALSE, 
+                           do_jgenes = TRUE, 
+                           restrict_length=TRUE){
 
   print("adding CDR1 and CDR2 based on V gene...")
   brd_BV = TRBVgrid$gene[!(grepl("-", TRBVgrid$gene))]
@@ -218,8 +233,8 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
     positions = positions[grepl("cdr3", positions) | positions %in% cdr]
   }
   pos = pos[,as.character(positions)]
-
-  prc_fts = data.frame(id = as.character(data[,1]))
+  # Change to rownames - prevent issue with duplicates
+  prc_fts = data.frame(id = as.character(rownames(data)))
   ##we don't calculate G because this is our reference
   aminos <- c("A", "C", "D", "E", "F", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y")
 
